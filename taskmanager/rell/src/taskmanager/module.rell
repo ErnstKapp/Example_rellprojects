@@ -1,0 +1,46 @@
+entity date{
+	
+	key date_ID: integer;
+
+	
+}
+
+entity activity{
+	
+	time: text;
+	date: date;
+	activity_name: text;
+	
+}
+
+operation add_date(date_int: integer, pubkey){
+	require(is_signer(pubkey));
+    
+    
+    
+	create date(date_ID = date_int);
+}
+
+operation add_activity(time: text, date_to_insert: integer, activity_name : text, pubkey){
+	require(is_signer(pubkey)); 
+	val date = date @ {.date_ID == date_to_insert};
+	create activity(time = time, date = date, activity_name = activity_name);
+}
+
+query get_activities_from_date(date_int: integer): text{
+	val date_to_get = date @ {.date_ID == date_int};
+	var activities = activity @* {.date == date_to_get};
+	var activity_string = "";
+	for(i in range(activities.size())){
+		activity_string += activities[i].activity_name;
+		activity_string += ", ";
+	}
+	return activity_string;
+	
+}
+
+query get_date_from_activity(activity_string: text): integer {
+	val date_to_get = activity @*{.activity_name == activity_string}(.date);
+	return date_to_get[0].date_ID;
+	
+}
