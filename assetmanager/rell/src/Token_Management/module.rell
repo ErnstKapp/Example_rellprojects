@@ -1,0 +1,59 @@
+/* 
+ User is identified by pubkey. 
+ */
+entity user {
+	
+	key pubkey; 
+	key username : text;
+
+	
+}
+
+entity balance {
+	/* balance is identified by user */
+	
+	key user; 
+	mutable amount : integer; 
+		
+}
+
+
+operation init (founder_pubkey: pubkey) {
+	/* in order to initialize, database cannot already have a user */
+  require( (user@*{} limit 1).size() == 0 );
+  val founder = create user (founder_pubkey, "admin");
+  create balance (founder, 1000000);
+}
+
+operation transfer_balance(fromKey: byte_array, toKey: byte_array, amount:integer){
+  val from = user @ {.pubkey == fromKey};
+  val to = user @ {.pubkey == toKey};
+  
+  require( balance@{from}.amount >= amount);
+  update balance@{from} (amount -= amount);
+  update balance@{to} (amount += amount);
+}
+
+
+operation register_user (
+    existing_user_pubkey: byte_array,
+    new_user_pubkey: byte_array,
+    new_user_username: text
+) {
+  require( is_signer(existing_user_pubkey) );
+  val existing_user = user@{existing_user_pubkey};
+
+
+  val new_user = create user (new_user_pubkey, new_user_username);
+
+  create balance (new_user, 0);
+}
+
+query get_balance(user_pubkey: text) {
+  val test = byte_array(user_pubkey);
+  val user = user @ {byte_array(user_pubkey)};
+  
+  return balance@{user}.amount;
+}
+
+

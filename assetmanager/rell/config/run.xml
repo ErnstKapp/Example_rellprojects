@@ -1,0 +1,14 @@
+<run>
+    <nodes>
+        <config src="node-config.properties" add-signers="true" />
+        <test-config src="node-config-test.properties"/>
+    </nodes>
+    <chains>
+        <chain name="Token_Management" iid="1">
+            <config height="0">
+                <app module="Token_Management">
+                </app>
+            </config>
+        </chain>
+    </chains>
+</run>
