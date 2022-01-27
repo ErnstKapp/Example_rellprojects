@@ -1,0 +1,74 @@
+body{
+  background-color: #09080a;
+  color: #f8f8ff;
+}
+
+.table td, .table th {
+  vertical-align: baseline;
+}
+
+.card, .modal{
+  color: #212529;
+}
+
+.full-height {
+  height: 100%;
+}
+
+.hand {
+  cursor: pointer;
+}
+
+.channel-list-item{
+  opacity: 0.8;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.channel-list-item:hover{
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.channel-list-item.active{
+  opacity: 1;
+  font-weight: bold;
+}
+
+.chatroom-wrapper{
+  display: flex;
+  flex-direction: column;
+}
+
+.chatroom-topnav{
+  background: #20232a;
+  grid-column: 1 / span 2;
+}
+
+.chatroom-main-channel {
+  overflow: auto;
+  max-height: 80vh;
+  flex: 1 1 auto;
+}
+.chatroom-channel-list{
+  overflow: auto;
+  flex-basis: auto;
+}
+
+@include media-breakpoint-up(sm) {
+  .chatroom-wrapper{
+     height: 100vh;
+     display: grid;
+     grid-template: auto 1fr / 2fr 1fr;
+  }
+
+  .chatroom-main-channel {
+    max-height: none;
+  }
+
+  .chatroom-channel-list{
+    border-left: 1px solid rgba(255,255,255,0.1);
+  }
+}

@@ -1,0 +1,101 @@
+@import "bootstrap/scss/bootstrap.scss";
+
+body {
+  background-color: #09080a;
+  color: #f8f8ff;
+}
+
+.table td,
+.table th {
+  vertical-align: baseline;
+}
+
+.card,
+.modal {
+  color: #212529;
+}
+
+.full-height {
+  height: 100%;
+}
+
+.hand {
+  cursor: pointer;
+}
+
+.game-list-item {
+  opacity: 0.8;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.game-list-item:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.game-list-item.active {
+  opacity: 1;
+  font-weight: bold;
+}
+
+.gameroom-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.gameroom-topnav {
+  background: #09080a;
+  grid-column: 1 / span 2;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.gameroom-main-game {
+  overflow: visible;
+  min-height: fit-content;
+  max-height: 80vh;
+  flex: 1 1 auto;
+}
+.gameroom-game-list {
+  overflow: auto;
+  flex-basis: auto;
+  background-color: #09080a;
+  border-left: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.guess-input,
+.guess-input:focus,
+.guess-input:disabled{
+  background: #211e25;
+  color:#d9d9db;
+}
+
+.newRoundBtn{
+  margin-left: 10px;
+}
+.loginBtn{
+  margin-right: 10px;
+}
+.logoutBtn{
+  margin-left: 10px;
+}
+
+@include media-breakpoint-up(sm) {
+  .gameroom-wrapper {
+    height: 100vh;
+    display: grid;
+    grid-template: auto 1fr / 2fr 1fr;
+  }
+
+  .gameroom-main-game {
+    max-height: none;
+  }
+}
+
+@include media-breakpoint-up(md) {
+  .gameroom-wrapper {
+    grid-template: auto 1fr / 75fr 25fr;
+  }
+}

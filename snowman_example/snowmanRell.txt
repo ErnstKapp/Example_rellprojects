@@ -1,0 +1,161 @@
+entity user{
+	key pubkey;
+	key username: text;
+}
+
+entity balance{
+	key user: user;
+	mutable amount: integer;
+}
+
+entity game_guesser{
+	key game, gamer: user;
+}
+
+entity game{
+	key game_lobby: text;
+	mutable word: text;
+	mutable turns_left: integer;
+	admin: user;
+}
+
+entity letter{
+	letter: text;
+	game: game;
+	mutable revealed: boolean;
+	mutable wrong_guess: boolean;
+}
+
+operation init (founder_pubkey: pubkey) {
+	require( (user@*{} limit 1).size() == 0 );
+	val founder = create user (founder_pubkey, 'admin');
+	create balance (founder, 1000000);
+}
+
+function transfer_balance(from:user, to:user, amount:integer){
+	require( balance@{from}.amount >= amount);
+	update balance@{from} (amount -= amount);
+	update balance@{to} (amount += amount);
+}
+
+function pay_fee (user, deduct_amount: integer) {
+	if(user.username != 'admin'){
+		transfer_balance(user, user@{.username == 'admin'}, deduct_amount);
+	}
+}
+
+operation guess_letter(letter_to_guess: text, game_lobby: text, pubkey){
+	require(is_signer(pubkey));
+	val current_game = game @ {.game_lobby == game_lobby};
+	val gamer = user@{pubkey};
+	require(game_guesser @? {current_game, gamer} );
+	var correct_guesses = 0;
+	var hidden_letters = letter @*{.game == current_game, .revealed == false, .wrong_guess == false};
+	
+	for (i in range(hidden_letters.size())){
+		var current_letter = hidden_letters[i].letter;
+		if (current_letter.compare_to(letter_to_guess) == 0){	
+			update hidden_letters[i] (revealed = true);
+			correct_guesses++;
+		}
+	}
+	
+	if (correct_guesses == 0){
+		update game@{game_lobby}(turns_left -= 1);
+		create letter(letter=letter_to_guess, game=current_game,revealed=true, wrong_guess=true);
+	}	
+}
+
+operation create_game(word: text, lobby_name: text, admin_pubkey: pubkey){
+	require(game @? {.game_lobby == lobby_name}(.game_lobby) == null);
+	require(is_signer(admin_pubkey));
+	val admin = user @ {admin_pubkey};
+	val turns_left = 14;
+	val game = create game(word=word, turns_left, admin, game_lobby=lobby_name);
+	for(i in range(word.size())){
+		var revealed = false;
+		if (word[i] == " "){
+			revealed = true;
+		}
+		create letter(letter=word[i], game=game, revealed=revealed, wrong_guess=false);
+		print(word[i]);	
+	}
+	val guesser = create game_guesser(game=game, gamer=admin);
+}
+
+operation add_user(user_pubkey: pubkey, name: text, existing_user_pubkey: pubkey){
+	require(is_signer(existing_user_pubkey));
+	val existing_user = user@{existing_user_pubkey};
+	pay_fee(existing_user, 1000);
+	create user(user_pubkey, name);
+	val new_user = user@{user_pubkey};
+	create balance(new_user, 1000);
+}
+
+operation add_user_to_game(lobby_name: text, new_user_name: text, adminPubKey: pubkey){
+	require(is_signer(adminPubKey));
+	val admin = user@{adminPubKey};
+	pay_fee(admin, 1);
+	val game = game @ {.game_lobby == lobby_name};
+	val user = user @ {new_user_name};
+	create game_guesser(user, game);
+}
+
+operation new_round(word: text, admin_pubkey: pubkey, lobby_name: text){
+	require(is_signer(admin_pubkey));
+	val admin = user @ {admin_pubkey};
+	require(game @ {.game_lobby == lobby_name}(.admin) == admin);
+	val game = game @ {.game_lobby == lobby_name};
+	delete letter @* {.game == game};
+	update game(.word = word, .turns_left = 14);
+	for(i in range(word.size())){
+		var revealed = false;
+		if (word[i] == " "){
+			revealed = true;
+		}
+		create letter(letter=word[i], game, revealed=revealed, wrong_guess=false);
+		print(word[i]);	
+	}
+}
+
+query letters_to_show(lobby_name: text): list<text>{
+	val current_game = game @ {.game_lobby == lobby_name};
+	return letter @*{.game == current_game, .revealed == true, .wrong_guess == false}.letter;
+}
+
+query letters_guessed(lobby_name: text): list<text>{
+	val current_game = game @ {.game_lobby == lobby_name};
+	return letter @*{.game == current_game, .revealed == true, .wrong_guess == true}.letter;
+}
+
+query letters_to_hide(lobby_name: text): integer{
+	val current_game = game @ {.game_lobby == lobby_name};
+	val hidden_letters = letter @*{.game == current_game, .revealed == false, .wrong_guess == false};
+	return hidden_letters.size();
+}
+
+query turns_left(lobby_name: text): integer{
+	return game @{.game_lobby == lobby_name}(.turns_left);
+}
+
+query get_user(pubkey) {
+	return user @? {pubkey}( id = user, username = .username);
+}
+
+query get_user_by_username(username: text){
+	return user @? {username};
+}
+
+query get_games(pubkey): list<(game_lobby: text,word: text,turns_left: integer, admin: text, admin_pubkey: pubkey)> {
+  return game_guesser@*{.gamer == user@{pubkey}}
+        (game_lobby = .game.game_lobby,
+        word = .game.word,
+        turns_left = .game.turns_left,
+        admin = .game.admin.username,
+        admin_pubkey = .game.admin.pubkey );
+}
+
+query get_balance(pubkey) {
+   return balance@{ user@{ pubkey } }.amount;
+}
+
